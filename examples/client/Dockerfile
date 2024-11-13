@@ -8,6 +8,4 @@ COPY .yarn .yarn
 RUN corepack enable
 RUN yarn install
 
-EXPOSE 3001
-
 CMD ["node", "index.js"]

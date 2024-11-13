@@ -9,6 +9,7 @@ services:
       - POLARIS_CONTAINER_WORKLOAD_BASE_URL=http://workload:3001
       - POLARIS_CONTAINER_ENABLE_INPUT_ENCRYPTION=false
       - POLARIS_CONTAINER_ENABLE_OUTPUT_ENCRYPTION=false
+      - POLARIS_CONTAINER_LOG_LEVEL=debug
 
   workload:
     build:
@@ -16,3 +17,10 @@ services:
       dockerfile: examples/workload/Dockerfile
     ports:
       - "3001:3001"
+
+  client:
+    build:
+      context: ..
+      dockerfile: examples/client/Dockerfile
+    environment:
+      - REQUEST_URL=http://polaris-proxy:3000/test

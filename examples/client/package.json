@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "author": "FR0NTIERX INC.",
   "dependencies": {
-    "@fr0ntier-x/polaris-sdk": "latest",
-    "express": "^4.21.1"
+    "@fr0ntier-x/polaris-sdk": "0.0.8",
+    "axios": "^1.7.7"
   },
   "engines": {
     "node": "22.x"
