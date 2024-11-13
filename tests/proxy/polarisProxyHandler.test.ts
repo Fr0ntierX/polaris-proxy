@@ -1,12 +1,9 @@
-import {
-  axiosRequestInterceptor,
-  axiosResponseInterceptor,
-} from "@fr0ntier-x/polaris-sdk/interceptors/axiosInterceptors";
+import { createRequestInterceptor, createResponseInterceptor } from "@fr0ntier-x/polaris-sdk/interceptors/axios";
 import axios from "axios";
 import express from "express";
 
 import { PolarisProxyHandler } from "../../src/proxy/polarisProxyHandler";
-import { encryptDataForContainer, polarisSDK } from "../../src/system/handlers/publicKey";
+import { encryptDataForContainer, polarisSDK, publicKeyHandler } from "../../src/system/handlers/publicKey";
 
 import type { Config } from "../../src/config/types";
 import type { NextFunction, Request } from "express";
@@ -57,6 +54,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
   async function bootServers() {
     return new Promise((res, _rej) => {
       polarisServer = polarisApp
+        .get(`/polaris-container/publicKey`, publicKeyHandler)
         .use(`/${contextRoot}/*`, handler.polarisUnwrap.bind(handler), handler.polarisProxy.bind(handler))
         .use((err: any, _req: express.Request, res: express.Response, _next: NextFunction) => {
           console.error(err.stack, err);
@@ -155,12 +153,12 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
         body: "helloWorld",
       };
 
-      const polarisBase = `${polarisUrl}/${contextRoot}`;
+      const basePath = `${polarisUrl}/${contextRoot}`;
 
-      axios.interceptors.request.use(axiosRequestInterceptor(polarisBase, polarisSDK));
-      axios.interceptors.response.use(axiosResponseInterceptor(polarisSDK));
+      axios.interceptors.request.use(createRequestInterceptor({ polarisSDK, polarisProxyBasePath: contextRoot }));
+      axios.interceptors.response.use(createResponseInterceptor({ polarisSDK }));
 
-      const endpoint = `${polarisBase}/${testRequest.path}`;
+      const endpoint = `${basePath}/${testRequest.path}`;
 
       let result = await axios.post(endpoint, testRequest.body, {
         headers: testRequest.headers,
