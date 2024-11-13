@@ -2,6 +2,7 @@
  * Interface representing the configuration settings.
  *
  * @property {string} workloadBaseUrl - The base URL for the workload.
+ * @property {string} keyType - The type of key to use for encryption.
  * @property {boolean} enableLogging - Flag to enable logging.
  * @property {boolean} enableCORS - Flag to enable CORS preflight requests and headers.
  * @property {boolean} enableInputEncryption - Flag to enable encryption for input data.
@@ -11,6 +12,7 @@
  */
 export interface Config {
   workloadBaseUrl: string;
+  keyType: string;
   enableLogging: boolean;
   enableCORS: boolean;
   enableInputEncryption: boolean;

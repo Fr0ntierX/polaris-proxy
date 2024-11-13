@@ -2,7 +2,7 @@ import express from "express";
 
 import { getConfig } from "../config";
 import { getLogger } from "../logging";
-import { polarisSDK } from "../system/handlers/publicKey";
+import { polarisSDK } from "../sdk";
 
 import type { Config } from "../config/types";
 import type { Request } from "express";

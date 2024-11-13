@@ -23,6 +23,7 @@ export const getConfig = () => {
   const enableOutputEncryption = process.env.POLARIS_CONTAINER_ENABLE_OUTPUT_ENCRYPTION === "true";
   const polarisHeaderKey = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-secure";
   const polarisContextRoot = process.env.POLARIS_CONTAINER_CONTEXT_ROOT || "";
+  const keyType = process.env.POLARIS_CONTAINER_KEY_TYPE || "ephemeral";
 
   // Validate configuration
   if (!workloadBaseUrl) throw new Error("POLARIS_CONTAINER_WORKLOAD_BASE_URL is required");
@@ -30,6 +31,7 @@ export const getConfig = () => {
   // Cache and return configuration
   configCache = {
     workloadBaseUrl,
+    keyType,
     enableLogging,
     enableCORS,
     enableInputEncryption,

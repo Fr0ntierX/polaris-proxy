@@ -1,13 +1,26 @@
+import { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
 import { createRequestInterceptor, createResponseInterceptor } from "@fr0ntier-x/polaris-sdk/interceptors/axios";
+import { EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk/key/handlers/ephemeral";
 import axios from "axios";
 import express from "express";
 
 import { PolarisProxyHandler } from "../../src/proxy/polarisProxyHandler";
-import { encryptDataForContainer, polarisSDK, publicKeyHandler } from "../../src/system/handlers/publicKey";
 
 import type { Config } from "../../src/config/types";
 import type { NextFunction, Request } from "express";
 import type http from "http";
+
+const polarisSDK = new PolarisSDK(new EphemeralKeyHandler());
+
+export const encryptDataForContainer = async (data: string): Promise<Buffer> => {
+  try {
+    const publicKey = await polarisSDK.getPublicKey();
+    return polarisSDK.encrypt(Buffer.from(data), publicKey);
+  } catch (error: any) {
+    console.error(error);
+    throw new Error(`Failed to encrypt data: ${error.message}`);
+  }
+};
 
 describe("PolarisProxyHandler End-to-End Encryption", () => {
   let mockConfig: Config;
@@ -28,6 +41,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
   // Mock Config
   mockConfig = {
     workloadBaseUrl: `http://localhost:${WORKLOAD_PORT}`,
+    keyType: "ephemeral",
     polarisContextRoot: contextRoot,
     polarisHeaderKey: "polaris-secure",
     enableInputEncryption: true,
@@ -54,7 +68,9 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
   async function bootServers() {
     return new Promise((res, _rej) => {
       polarisServer = polarisApp
-        .get(`/polaris-container/publicKey`, publicKeyHandler)
+        .get(`/polaris-container/publicKey`, async (req: express.Request, res: express.Response) => {
+          res.json({ publicKey: await polarisSDK.getPublicKey() });
+        })
         .use(`/${contextRoot}/*`, handler.polarisUnwrap.bind(handler), handler.polarisProxy.bind(handler))
         .use((err: any, _req: express.Request, res: express.Response, _next: NextFunction) => {
           console.error(err.stack, err);
