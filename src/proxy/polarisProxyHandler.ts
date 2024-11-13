@@ -73,6 +73,8 @@ export class PolarisProxyHandler {
       }
       getLogger().info(`polarisUnwrap: ${polarisPath}`);
 
+      console.log("DBG:", req);
+
       next();
     } catch (error) {
       getLogger().error(`polarisUnwrap error: ${error}`);

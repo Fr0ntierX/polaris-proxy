@@ -12,6 +12,6 @@
     "resolveJsonModule": true,
     "types": ["node", "jest"]
   },
-  "include": ["**/*.ts", "**/*.js"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["**/*.ts", "**/*.js", "examples/workload/index.cjs"],
+  "exclude": ["node_modules", "dist", "example"]
 }

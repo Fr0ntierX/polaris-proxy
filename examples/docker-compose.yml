@@ -1,0 +1,18 @@
+services:
+  polaris-proxy:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - POLARIS_CONTAINER_WORKLOAD_BASE_URL=http://workload:3001
+      - POLARIS_CONTAINER_ENABLE_INPUT_ENCRYPTION=false
+      - POLARIS_CONTAINER_ENABLE_OUTPUT_ENCRYPTION=false
+
+  workload:
+    build:
+      context: ..
+      dockerfile: examples/workload/Dockerfile
+    ports:
+      - "3001:3001"

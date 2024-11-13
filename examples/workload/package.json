@@ -1,0 +1,12 @@
+{
+  "name": "example-workload",
+  "version": "1.0.0",
+  "author": "FR0NTIERX INC.",
+  "dependencies": {
+    "express": "^4.21.1"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "packageManager": "yarn@4.5.1"
+}

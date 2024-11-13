@@ -1,5 +1,6 @@
 node_modules
+examples
 .eslintrc.js
 tsconfig.tsbuildinfo
 jest.config.js
-dist/
+dist
