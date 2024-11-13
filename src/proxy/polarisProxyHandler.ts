@@ -3,7 +3,7 @@ import proxy from "express-http-proxy";
 import { getLogger } from "../logging";
 
 import type { Config } from "../config/types";
-import type { PolarisSDK } from "../lib/polaris-sdk";
+import type { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
 import type { NextFunction, Request, Response } from "express";
 import type { RequestOptions } from "http";
 

@@ -1,10 +1,10 @@
-import axios from "axios";
-import express from "express";
-
 import {
   axiosRequestInterceptor,
   axiosResponseInterceptor,
-} from "../../lib/polaris-sdk/interceptors/axiosInterceptors";
+} from "@fr0ntier-x/polaris-sdk/interceptors/axiosInterceptors";
+import axios from "axios";
+import express from "express";
+
 import { encryptDataForContainer, polarisSDK } from "../../system/handlers/publicKey";
 import { PolarisProxyHandler } from "../polarisProxyHandler";
 

@@ -1,7 +1,7 @@
 import { Buffer } from "buffer";
 
-import { PolarisSDK } from "../../lib/polaris-sdk";
-import { EphemeralKeyHandler } from "../../lib/polaris-sdk/key/handlers/ephemeral";
+import { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
+import { EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk/key/handlers/ephemeral";
 
 import type { Request, Response } from "express";
 

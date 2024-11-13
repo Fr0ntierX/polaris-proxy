@@ -1,8 +1,9 @@
+import { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
+import { EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk/key/handlers/ephemeral";
+
 import { PolarisProxyHandler } from "./polarisProxyHandler";
 
 import { getConfig } from "../config";
-import { PolarisSDK } from "../lib/polaris-sdk";
-import { EphemeralKeyHandler } from "../lib/polaris-sdk/key/handlers/ephemeral";
 import { getLogger } from "../logging";
 
 import type { Express, NextFunction, Request, Response } from "express";
