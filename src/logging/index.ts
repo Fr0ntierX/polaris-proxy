@@ -12,10 +12,10 @@ let logger: Logger | undefined;
  * @returns {Logger} The logger instance.
  */
 export const getLogger = (): Logger => {
-  const { enableLogging } = getConfig();
+  const { enableLogging, logLevel } = getConfig();
 
   if (!logger) {
-    logger = pino({ level: enableLogging ? "info" : "silent" });
+    logger = pino({ level: enableLogging ? logLevel : "silent" });
   }
 
   return logger;

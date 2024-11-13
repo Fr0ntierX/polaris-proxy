@@ -1,9 +1,8 @@
-import { EphemeralKeyHandler, PolarisSDK } from "@fr0ntier-x/polaris-sdk";
-
-import { PolarisProxyHandler } from "./polarisProxyHandler";
+import { PolarisProxyHandler } from "./handlers/polarisProxyHandler";
 
 import { getConfig } from "../config";
 import { getLogger } from "../logging";
+import { polarisSDK } from "../sdk";
 
 import type { Express, NextFunction, Request, Response } from "express";
 
@@ -17,9 +16,8 @@ export const registerEncryptionProxy = (app: Express): void => {
   // Get the configuration
   const config = getConfig();
 
-  // Initialize PolarisSDK and PolarisProxyHandler
-  const sdk = new PolarisSDK(new EphemeralKeyHandler());
-  const polarisProxyHandler = new PolarisProxyHandler(sdk, config);
+  // Initialize the PolarisProxyHandler
+  const polarisProxyHandler = new PolarisProxyHandler(polarisSDK, config);
 
   // Register the proxy for all endpoints as a single middleware chain
   app.use(
@@ -29,9 +27,8 @@ export const registerEncryptionProxy = (app: Express): void => {
     (err: any, _req: Request, res: Response, next: NextFunction) => {
       if (err) {
         getLogger().error(err);
-        res.status(400).send("Error processing request");
+        res.status(400).send(`Error processing request: ${err.message}`);
       } else {
-        getLogger().info("proxying next");
         next();
       }
     }

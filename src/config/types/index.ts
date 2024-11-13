@@ -8,7 +8,9 @@
  * @property {boolean} enableInputEncryption - Flag to enable encryption for input data.
  * @property {boolean} enableOutputEncryption - Flag to enable encryption for output data.
  * @property {string} polarisHeaderKey - Polaris Header Selector
+ * @property {string} polariResponsePublicKeyHeader - Polar Response Public Key Header selector
  * @property {boolean} polarisContextRoute - Polaris Root Endpoint, i.e. 'polaris' for /polaris/*
+ * @property {string} logLevel - The log level for the application.
  */
 export interface Config {
   workloadBaseUrl: string;
@@ -18,5 +20,7 @@ export interface Config {
   enableInputEncryption: boolean;
   enableOutputEncryption: boolean;
   polarisHeaderKey: string;
+  polarisResponsePublicKeyHeader: string;
   polarisContextRoot: string;
+  logLevel: string;
 }

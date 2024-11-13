@@ -22,8 +22,10 @@ export const getConfig = () => {
   const enableInputEncryption = process.env.POLARIS_CONTAINER_ENABLE_INPUT_ENCRYPTION === "true";
   const enableOutputEncryption = process.env.POLARIS_CONTAINER_ENABLE_OUTPUT_ENCRYPTION === "true";
   const polarisHeaderKey = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-secure";
+  const polarisResponsePublicKeyHeader = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-response-public-key";
   const polarisContextRoot = process.env.POLARIS_CONTAINER_CONTEXT_ROOT || "";
   const keyType = process.env.POLARIS_CONTAINER_KEY_TYPE || "ephemeral";
+  const logLevel = process.env.POLARIS_CONTAINER_LOG_LEVEL || "info";
 
   // Validate configuration
   if (!workloadBaseUrl) throw new Error("POLARIS_CONTAINER_WORKLOAD_BASE_URL is required");
@@ -37,7 +39,9 @@ export const getConfig = () => {
     enableInputEncryption,
     enableOutputEncryption,
     polarisHeaderKey,
+    polarisResponsePublicKeyHeader,
     polarisContextRoot,
+    logLevel,
   };
   return configCache;
 };

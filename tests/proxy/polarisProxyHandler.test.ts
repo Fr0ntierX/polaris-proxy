@@ -7,7 +7,7 @@ import {
 import axios from "axios";
 import express from "express";
 
-import { PolarisProxyHandler } from "../../src/proxy/polarisProxyHandler";
+import { PolarisProxyHandler } from "../../src/proxy/handlers/polarisProxyHandler";
 
 import type { Config } from "../../src/config/types";
 import type { NextFunction, Request } from "express";
@@ -47,10 +47,12 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     keyType: "ephemeral",
     polarisContextRoot: contextRoot,
     polarisHeaderKey: "polaris-secure",
+    polarisResponsePublicKeyHeader: "polaris-response-public-key",
     enableInputEncryption: true,
     enableLogging: false,
     enableCORS: false,
     enableOutputEncryption: true,
+    logLevel: "debug",
   };
 
   let workloadConfig = {
