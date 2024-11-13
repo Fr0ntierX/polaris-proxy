@@ -435,6 +435,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fr0ntier-x/polaris-sdk@npm:^0.0.5":
+  version: 0.0.5
+  resolution: "@fr0ntier-x/polaris-sdk@npm:0.0.5"
+  dependencies:
+    axios: "npm:^1.7.7"
+    buffer: "npm:^6.0.3"
+    pino: "npm:^9.5.0"
+  checksum: 10c0/eba10b75cdd1b89179ad716eb85a968816a7e7d43532e77b6bab26dd72f9d2df460a1163dcf23866ba976b7f6a1122396b6ac4f7cef1f1ed84c0f289786ca01f
+  languageName: node
+  linkType: hard
+
 "@google-cloud/kms@npm:^4.5.0":
   version: 4.5.0
   resolution: "@google-cloud/kms@npm:4.5.0"
@@ -5454,6 +5465,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "polaris-container@workspace:."
   dependencies:
+    "@fr0ntier-x/polaris-sdk": "npm:^0.0.5"
     "@google-cloud/kms": "npm:^4.5.0"
     "@types/cors": "npm:^2.8.17"
     "@types/elliptic": "npm:^6.4.18"

@@ -1,4 +1,4 @@
-import type { KeyHandler } from "@fr0ntier-x/polaris-sdk/key/types";
+import type { KeyHandler } from "@fr0ntier-x/polaris-sdk";
 
 export class AzureSKRSidecarKeyHandler implements KeyHandler {
   getPublicKey(): Promise<string> {

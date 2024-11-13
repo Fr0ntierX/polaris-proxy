@@ -2,7 +2,7 @@ import { KeyManagementServiceClient } from "@google-cloud/kms";
 
 import { getConfigFromEnv } from "./utils";
 
-import type { KeyHandler } from "@fr0ntier-x/polaris-sdk/key/types";
+import type { KeyHandler } from "@fr0ntier-x/polaris-sdk";
 
 export class GoogleFederatedKeyHandler implements KeyHandler {
   private keyWrappingKeyName: string;

@@ -1,5 +1,4 @@
-import { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
-import { EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk/key/handlers/ephemeral";
+import { PolarisSDK, EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk";
 
 import { getConfig } from "../config";
 import { AzureSKRSidecarKeyHandler } from "../key/handlers/AzureSKRSidecarKeyHandler";

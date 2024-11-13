@@ -1,6 +1,9 @@
-import { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
-import { createRequestInterceptor, createResponseInterceptor } from "@fr0ntier-x/polaris-sdk/interceptors/axios";
-import { EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk/key/handlers/ephemeral";
+import {
+  PolarisSDK,
+  createAxiosRequestInterceptor,
+  createAxiosResponseInterceptor,
+  EphemeralKeyHandler,
+} from "@fr0ntier-x/polaris-sdk";
 import axios from "axios";
 import express from "express";
 
@@ -171,8 +174,8 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
 
       const basePath = `${polarisUrl}/${contextRoot}`;
 
-      axios.interceptors.request.use(createRequestInterceptor({ polarisSDK, polarisProxyBasePath: contextRoot }));
-      axios.interceptors.response.use(createResponseInterceptor({ polarisSDK }));
+      axios.interceptors.request.use(createAxiosRequestInterceptor({ polarisSDK, polarisProxyBasePath: contextRoot }));
+      axios.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
 
       const endpoint = `${basePath}/${testRequest.path}`;
 

@@ -1,5 +1,4 @@
-import { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
-import { EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk/key/handlers/ephemeral";
+import { EphemeralKeyHandler, PolarisSDK } from "@fr0ntier-x/polaris-sdk";
 
 import { PolarisProxyHandler } from "./polarisProxyHandler";
 
