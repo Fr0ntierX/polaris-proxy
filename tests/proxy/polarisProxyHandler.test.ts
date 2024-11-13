@@ -5,10 +5,10 @@ import {
 import axios from "axios";
 import express from "express";
 
-import { encryptDataForContainer, polarisSDK } from "../../system/handlers/publicKey";
-import { PolarisProxyHandler } from "../polarisProxyHandler";
+import { PolarisProxyHandler } from "../../src/proxy/polarisProxyHandler";
+import { encryptDataForContainer, polarisSDK } from "../../src/system/handlers/publicKey";
 
-import type { Config } from "../../config/types";
+import type { Config } from "../../src/config/types";
 import type { NextFunction, Request } from "express";
 import type http from "http";
 
