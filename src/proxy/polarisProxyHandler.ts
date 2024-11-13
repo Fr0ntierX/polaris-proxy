@@ -58,22 +58,26 @@ export class PolarisProxyHandler {
       const path = req.baseUrl.split(root).pop() || "";
       getLogger().info(`polarisUnwrap - root: ${root} - path: ${path}`);
 
-      const headers = (req.headers[this.polarisHeader] as string) || "{}";
-
       // treat polarisPayloads
+      const headers = JSON.stringify(req.headers);
+
       const polarisPath = (await this.getInbound(path)).toString();
-      const polarisHeaders = JSON.parse((await this.getInbound(headers)).toString());
+
+      const polarisHeaders = this.config.enableInputEncryption
+        ? { [this.polarisHeader]: (await this.getInbound(headers)).toString() }
+        : JSON.parse(headers);
+
       req.polarisPayload = {
         path: polarisPath,
         headers: polarisHeaders,
       };
+
       const rawBody = await this.getRawBody(req);
+
       if (rawBody) {
         req.polarisPayload.body = await this.getInbound(rawBody);
       }
       getLogger().info(`polarisUnwrap: ${polarisPath}`);
-
-      console.log("DBG:", req);
 
       next();
     } catch (error) {
@@ -101,6 +105,7 @@ export class PolarisProxyHandler {
       },
       proxyReqBodyDecorator: (bodyContent: unknown, srcReq: Request) => {
         const body = req.polarisPayload?.body || bodyContent;
+
         getLogger().info(`polarisProxy body applied`);
         return body;
       },
