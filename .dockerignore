@@ -10,3 +10,4 @@ yarn-error.log
 .husky
 temp
 Dockerfile
+.github
