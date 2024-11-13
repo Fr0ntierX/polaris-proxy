@@ -1,0 +1,26 @@
+version: "3"
+services:
+  polaris:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - POLARIS_CONTAINER_ENABLE_INPUT_ENCRYPTION=false
+      - POLARIS_CONTAINER_ENABLE_OUTPUT_ENCRYPTION=false
+      - POLARIS_CONTAINER_WORKLOAD_BASE_URL=http://workload:3001
+      - POLARIS_CONTAINER_ENABLE_LOGGING=true
+
+  workload:
+    build:
+      context: .
+      dockerfile: src/workload/Dockerfile.workload
+    ports:
+      - "3001:3001"
+    environment:
+      - POLARIS_CONTAINER_ENABLE_INPUT_ENCRYPTION=false
+      - POLARIS_CONTAINER_ENABLE_OUTPUT_ENCRYPTION=false
+      - POLARIS_CONTAINER_WORKLOAD_BASE_URL=http://localhost:3001
+      - POLARIS_CONTAINER_BASE_URL=http://polaris:3000
+      - POLARIS_CONTAINER_ENABLE_LOGGING=true

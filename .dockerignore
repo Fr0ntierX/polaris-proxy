@@ -1,0 +1,12 @@
+**/node_modules
+yarn-error.log
+**/build
+**/coverage
+**/dist
+.git
+.gitignore
+**/__test__
+.github
+.husky
+temp
+Dockerfile
