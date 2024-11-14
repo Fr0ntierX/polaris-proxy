@@ -8,5 +8,5 @@ import type { Request, Response } from "express";
  * @returns A JSON response with the status of the service.
  */
 export const healthHandler = (req: Request, res: Response) => {
-  res.json({ status: "OK" });
+  res.json({ status: "ok" });
 };

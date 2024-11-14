@@ -7,6 +7,7 @@ const {
 } = require("@fr0ntier-x/polaris-sdk");
 
 const requestUrl = process.env.REQUEST_URL;
+const polarisSDK = new PolarisSDK(new EphemeralKeyHandler());
 
 const makeUnencryptedRequest = () => {
   console.log("Sending unencrypted request to:", requestUrl);
@@ -24,11 +25,6 @@ const makeUnencryptedRequest = () => {
 const makeEncryptedRequest = () => {
   console.log("Sending encrypted request to:", requestUrl);
 
-  const polarisSDK = new PolarisSDK(new EphemeralKeyHandler());
-
-  axios.interceptors.request.use(createAxiosRequestInterceptor({ polarisSDK }));
-  axios.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
-
   axios
     .post(requestUrl, JSON.stringify({ data: "Test Unencrypted Communication" }), {
       headers: { "Content-Type": "application/json" },
@@ -42,6 +38,9 @@ const makeEncryptedRequest = () => {
 };
 
 if (process.env.ENABLE_ENCRYPTED_COMMUNICATION) {
+  axios.interceptors.request.use(createAxiosRequestInterceptor({ polarisSDK }));
+  axios.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
+
   makeEncryptedRequest();
   setInterval(makeEncryptedRequest, 5000);
 } else {
