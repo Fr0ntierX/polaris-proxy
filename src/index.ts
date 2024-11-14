@@ -4,6 +4,7 @@ import helmet from "helmet";
 
 import { getConfig } from "./config";
 import { getLogger } from "./logging";
+import handleErrors from "./middleware/handleErrors";
 import { registerEncryptionProxy } from "./proxy";
 import { registerSystemEndpoints } from "./system";
 
@@ -19,6 +20,8 @@ app.use(
     },
   })
 );
+
+app.use(handleErrors);
 
 // Get the configuration
 const { enableCORS } = getConfig();
