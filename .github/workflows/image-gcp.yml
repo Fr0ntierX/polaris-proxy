@@ -1,0 +1,70 @@
+name: Build and Push Docker Image GCP
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: Docker
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      IMAGE_NAME: polaris-proxy
+      GCP_PROJECT_ID: fr0ntierx-public
+      GCP_REGION: global
+      GCP_SERVICE_ACCOUNT: github-actions-sa@fr0ntierx-public.iam.gserviceaccount.com
+      GAR_REPO: us-docker.pkg.dev/fr0ntierx-public/fr0ntierx-public-registry/polaris-proxy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: projects/1034768436478/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          create_credentials_file: true
+          export_environment_variables: true
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          id_token_include_email: true
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Google Artifact Registry
+        run: |
+          gcloud auth configure-docker --quiet
+
+      - name: Print Active Account
+        run: gcloud auth list
+
+      - name: Print Access Token
+        run: gcloud auth print-access-token
+
+      - name: Verify Authentication
+        run: gcloud auth print-identity-token
+
+      - name: Check Docker Config
+        run: cat ~/.docker/config.json
+
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME .
+
+      - name: Tag image for Google Artifact Registry
+        run: |
+          docker tag $IMAGE_NAME $GAR_REPO:latest
+
+      - name: Push image to Google Artifact Registry
+        run: |
+          docker push $GAR_REPO:latest
