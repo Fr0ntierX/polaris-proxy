@@ -9,7 +9,7 @@ import type { NextFunction, Request, Response } from "express";
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleErrors = (err: any, req: Request, res: Response, next: NextFunction) => {
-  req.log?.error(err);
+  console.error(err);
 
   if (err instanceof Error) {
     res.status(400).json({ error: err.message });
