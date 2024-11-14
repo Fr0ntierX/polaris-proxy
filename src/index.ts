@@ -36,7 +36,9 @@ if (enableCORS) {
 registerSystemEndpoints(app);
 
 // Register the encryption proxy
-registerEncryptionProxy(app);
+(async () => {
+  await registerEncryptionProxy(app);
+})();
 
 // Enable CORS preflight requests
 if (enableCORS) {
