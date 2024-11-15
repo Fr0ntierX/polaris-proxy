@@ -16,7 +16,7 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
   async init() {
     const skrKeyConfig = getConfigFromEnv();
     const maxRetries = 5;
-    const retryInterval = 60000; // 1 minute
+    const retryInterval = 60000;
 
     let attempt = 0;
     while (attempt < maxRetries) {
@@ -27,6 +27,7 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
 
         this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
         this.publicKey = jwkToPem(key as jwkToPem.JWK);
+        console.log("Key released successfully");
         return;
       } catch (error: any) {
         if (attempt < maxRetries) {
