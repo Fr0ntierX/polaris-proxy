@@ -1,12 +1,12 @@
 import type { AzureSKRSidecarKeyConfig } from "../types";
 
 export const getConfigFromEnv = (): AzureSKRSidecarKeyConfig => {
-  const maaEndpoint = process.env.MAA_ENDPOINT;
-  const akvEndpoint = process.env.AKV_ENDPOINT;
-  const kid = process.env.KID;
-  const accessToken = process.env.ACCESS_TOKEN;
-  const maxSKRRequestRetries = Number(process.env.POLARIS_CONTAINER_MAX_SKR_REQUEST_RETRIES ?? 5);
-  const skrRetryInterval = Number(process.env.POLARIS_CONTAINER_SKR_RETRY_INTERVAL ?? 60000);
+  const maaEndpoint = process.env.POLARIS_CONTAINER_AZURE_SKR_MAA_ENDPOINT;
+  const akvEndpoint = process.env.POLARIS_CONTAINER_AZURE_SKR_AKV_ENDPOINT;
+  const kid = process.env.POLARIS_CONTAINER_AZURE_SKR_KID;
+  const accessToken = process.env.POLARIS_CONTAINER_AZURE_SKR_ACCESS_TOKEN;
+  const maxSKRRequestRetries = Number(process.env.POLARIS_CONTAINER_AZURE_SKR_MAX_REQUEST_RETRIES ?? 5);
+  const skrRetryInterval = Number(process.env.POLARIS_CONTAINER_AZURE_SKR_RETRY_INTERVAL ?? 60000);
 
   if (!maaEndpoint) throw new Error("MAA_ENDPOINT environment variable not defined");
   if (!akvEndpoint) throw new Error("AKV_ENDPOINT environment variable not defined");
