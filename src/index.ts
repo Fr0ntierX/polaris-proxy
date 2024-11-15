@@ -21,8 +21,6 @@ app.use(
   })
 );
 
-app.use(handleErrors);
-
 // Get the configuration
 const { enableCORS } = getConfig();
 
@@ -34,14 +32,19 @@ if (enableCORS) {
     })
   );
 }
+try {
+  // Register Polaris Container system endpoints
+  registerSystemEndpoints(app);
 
-// Register Polaris Container system endpoints
-registerSystemEndpoints(app);
+  // Register the encryption proxy
+  (async () => {
+    await registerEncryptionProxy(app);
+  })();
+} catch (err: any) {
+  console.log(err);
+}
 
-// Register the encryption proxy
-(async () => {
-  await registerEncryptionProxy(app);
-})();
+app.use(handleErrors);
 
 // Enable CORS preflight requests
 if (enableCORS) {
