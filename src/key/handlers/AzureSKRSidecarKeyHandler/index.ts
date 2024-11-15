@@ -15,13 +15,28 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
 
   async init() {
     const skrKeyConfig = getConfigFromEnv();
+    const maxRetries = 5;
+    const retryInterval = 60000; // 1 minute
 
-    const { data } = await axios.post("http://localhost:8080/key/release", skrKeyConfig);
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        attempt++;
+        const { data } = await axios.post("http://localhost:8080/key/release", skrKeyConfig);
+        const key = JSON.parse(data.key);
 
-    const key = JSON.parse(data.key);
-
-    this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
-    this.publicKey = jwkToPem(key as jwkToPem.JWK);
+        this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
+        this.publicKey = jwkToPem(key as jwkToPem.JWK);
+        return;
+      } catch (error: any) {
+        if (attempt < maxRetries) {
+          console.warn(`Attempt ${attempt} failed. Retrying in ${retryInterval / 1000} seconds...`);
+          await new Promise((resolve) => setTimeout(resolve, retryInterval));
+        } else {
+          throw new Error(`Failed to obtain key after ${maxRetries} attempts: ${error.message}`);
+        }
+      }
+    }
   }
 
   async getPublicKey(): Promise<string> {

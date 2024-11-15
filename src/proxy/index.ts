@@ -12,7 +12,7 @@ import type { Express, NextFunction, Request, Response } from "express";
  * @param {Express} app - The Express application instance.
  *
  */
-export const registerEncryptionProxy = async (app: Express): Promise<void> => {
+export const registerEncryptionProxy = (app: Express): void => {
   // Get the configuration
   const config = getConfig();
 
