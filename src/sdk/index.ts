@@ -4,6 +4,8 @@ import { getConfig } from "../config";
 import { AzureSKRSidecarKeyHandler } from "../key/handlers/AzureSKRSidecarKeyHandler";
 import { GoogleFederatedKeyHandler } from "../key/handlers/GoogleFederatedKeyHandler";
 
+export let polarisSDK: PolarisSDK;
+
 export const createPolarisSDK = async () => {
   switch (getConfig().keyType) {
     case "ephemeral":
@@ -18,3 +20,7 @@ export const createPolarisSDK = async () => {
       throw new Error("Invalid key type specified in configuration");
   }
 };
+
+(async () => {
+  polarisSDK = await createPolarisSDK();
+})();

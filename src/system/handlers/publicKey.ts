@@ -1,13 +1,7 @@
-import { createPolarisSDK } from "../../sdk";
+import { polarisSDK } from "../../sdk";
 
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
 
-export const publicKeyHandler = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const polarisSDK = await createPolarisSDK();
-
-    res.json({ publicKey: await polarisSDK.getPublicKey() });
-  } catch (err: any) {
-    next(err);
-  }
+export const publicKeyHandler = async (req: Request, res: Response) => {
+  res.json({ publicKey: await polarisSDK.getPublicKey() });
 };

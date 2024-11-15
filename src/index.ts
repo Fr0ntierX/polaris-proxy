@@ -4,7 +4,6 @@ import helmet from "helmet";
 
 import { getConfig } from "./config";
 import { getLogger } from "./logging";
-import handleErrors from "./middleware/handleErrors";
 import { registerEncryptionProxy } from "./proxy";
 import { registerSystemEndpoints } from "./system";
 
@@ -32,19 +31,12 @@ if (enableCORS) {
     })
   );
 }
-try {
-  // Register Polaris Container system endpoints
-  registerSystemEndpoints(app);
 
-  // Register the encryption proxy
-  (async () => {
-    await registerEncryptionProxy(app);
-  })();
-} catch (err: any) {
-  console.log(err);
-}
+// Register Polaris Container system endpoints
+registerSystemEndpoints(app);
 
-app.use(handleErrors);
+// Register the encryption proxy
+registerEncryptionProxy(app);
 
 // Enable CORS preflight requests
 if (enableCORS) {
