@@ -4,17 +4,23 @@ import { getConfig } from "../config";
 import { AzureSKRSidecarKeyHandler } from "../key/handlers/AzureSKRSidecarKeyHandler";
 import { GoogleFederatedKeyHandler } from "../key/handlers/GoogleFederatedKeyHandler";
 
-const createPolarisSDK = () => {
+export let polarisSDK: PolarisSDK;
+
+export const createPolarisSDK = async () => {
   switch (getConfig().keyType) {
     case "ephemeral":
       return new PolarisSDK(new EphemeralKeyHandler());
     case "google-federated":
       return new PolarisSDK(new GoogleFederatedKeyHandler());
     case "azure-skr":
-      throw new AzureSKRSidecarKeyHandler();
+      const azureKeyHandler = new AzureSKRSidecarKeyHandler();
+      await azureKeyHandler.init();
+      return new PolarisSDK(azureKeyHandler);
     default:
       throw new Error("Invalid key type specified in configuration");
   }
 };
 
-export const polarisSDK = createPolarisSDK();
+(async () => {
+  polarisSDK = await createPolarisSDK();
+})();
