@@ -3,4 +3,6 @@ export interface AzureSKRSidecarKeyConfig {
   akv_endpoint: string;
   kid: string;
   access_token?: string;
+  maxSKRRequestRetries: number;
+  skrRetryInterval: number;
 }

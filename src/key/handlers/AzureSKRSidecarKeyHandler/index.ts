@@ -14,15 +14,13 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
   constructor() {}
 
   async init() {
-    const skrKeyConfig = getConfigFromEnv();
-    const maxRetries = 5;
-    const retryInterval = 60000;
+    const { maxSKRRequestRetries, skrRetryInterval, ...skrConfig } = getConfigFromEnv();
 
     let attempt = 0;
-    while (attempt < maxRetries) {
+    while (attempt < maxSKRRequestRetries) {
       try {
         attempt++;
-        const { data } = await axios.post("http://localhost:8080/key/release", skrKeyConfig);
+        const { data } = await axios.post("http://localhost:8080/key/release", skrConfig);
         const key = JSON.parse(data.key);
 
         this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
@@ -30,11 +28,11 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
         console.log("Key released successfully");
         return;
       } catch (error: any) {
-        if (attempt < maxRetries) {
-          console.warn(`Attempt ${attempt} failed. Retrying in ${retryInterval / 1000} seconds...`);
-          await new Promise((resolve) => setTimeout(resolve, retryInterval));
+        if (attempt < maxSKRRequestRetries) {
+          console.warn(`Attempt ${attempt} failed. Retrying in ${skrRetryInterval / 1000} seconds...`);
+          await new Promise((resolve) => setTimeout(resolve, skrRetryInterval));
         } else {
-          throw new Error(`Failed to obtain key after ${maxRetries} attempts: ${error.message}`);
+          throw new Error(`Failed to obtain key after ${maxSKRRequestRetries} attempts: ${error.message}`);
         }
       }
     }
