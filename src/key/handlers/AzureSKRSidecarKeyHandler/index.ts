@@ -18,9 +18,7 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
 
     const { data } = await axios.post("http://localhost:8080/key/release", skrKeyConfig);
 
-    console.log(data, "data");
-
-    const key = JSON.parse(data.response.key);
+    const key = JSON.parse(data.key);
 
     this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
     this.publicKey = jwkToPem(key as jwkToPem.JWK);
