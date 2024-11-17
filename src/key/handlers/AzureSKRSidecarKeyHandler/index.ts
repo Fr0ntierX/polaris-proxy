@@ -13,7 +13,7 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
 
   constructor() {}
 
-  async init() {
+  private async init() {
     const { maxSKRRequestRetries, skrRetryInterval, ...skrConfig } = getConfigFromEnv();
 
     let attempt = 0;
@@ -40,14 +40,23 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
 
   async getPublicKey(): Promise<string> {
     if (!this.publicKey) {
-      throw new Error("Public key not found");
+      await this.init();
+
+      if (!this.publicKey) {
+        throw new Error("Public key could not be obtained from the Azure Vault");
+      }
     }
+
     return this.publicKey;
   }
 
   async unwrapKey(_wrappedKey: Buffer): Promise<Buffer> {
     if (!this.privateKey) {
-      throw new Error("Private key not found");
+      await this.init();
+
+      if (!this.privateKey) {
+        throw new Error("Private key could not be obtained from the Azure Vault");
+      }
     }
 
     const decryptedKey = privateDecrypt(
