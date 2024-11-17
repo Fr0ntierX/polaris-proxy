@@ -7,6 +7,7 @@
  * @property {boolean} enableCORS - Flag to enable CORS preflight requests and headers.
  * @property {boolean} enableInputEncryption - Flag to enable encryption for input data.
  * @property {boolean} enableOutputEncryption - Flag to enable encryption for output data.
+ * @property {string} polarisUrlHeaderKey - Polaris URL Header Selector
  * @property {string} polarisHeaderKey - Polaris Header Selector
  * @property {string} polariResponsePublicKeyHeader - Polar Response Public Key Header selector
  * @property {boolean} polarisContextRoute - Polaris Root Endpoint, i.e. 'polaris' for /polaris/*
@@ -19,6 +20,7 @@ export interface Config {
   enableCORS: boolean;
   enableInputEncryption: boolean;
   enableOutputEncryption: boolean;
+  polarisUrlHeaderKey: string;
   polarisHeaderKey: string;
   polarisResponsePublicKeyHeader: string;
   polarisContextRoot: string;

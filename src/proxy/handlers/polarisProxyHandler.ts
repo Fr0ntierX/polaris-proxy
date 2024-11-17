@@ -44,19 +44,21 @@ export class PolarisProxyHandler {
         throw new Error("Response public key is required for output encryption");
       }
       const responsePublicKey = this.config.enableOutputEncryption
-        ? Buffer.from(req.headers[this.config.polarisResponsePublicKeyHeader] as string, "base64url").toString()
+        ? Buffer.from(req.headers[this.config.polarisResponsePublicKeyHeader] as string, "base64").toString()
         : undefined;
 
       // Process the request parameters
       if (this.config.enableInputEncryption) {
         // Process the URL
-        const decryptedUrl = await this.decryptData(Buffer.from(req.baseUrl.slice(1), "base64url"));
+        const decryptedUrl = await this.decryptData(
+          Buffer.from(req.headers[this.config.polarisUrlHeaderKey] as string, "base64")
+        );
         const workloadUrl = decryptedUrl.toString();
         this.logger.debug(`Decrypted workload URL: ${workloadUrl}`);
 
         // Process the headers
         const decryptedHeaders = await this.decryptData(
-          Buffer.from(req.headers[this.config.polarisHeaderKey] as string, "base64url")
+          Buffer.from(req.headers[this.config.polarisHeaderKey] as string, "base64")
         );
         const workloadHeaders = JSON.parse(decryptedHeaders.toString());
         this.logger.debug(`Decrypted workload headers: ${Object.keys(workloadHeaders).join(", ")}`);
