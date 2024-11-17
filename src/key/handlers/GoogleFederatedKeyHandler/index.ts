@@ -29,7 +29,7 @@ export class GoogleFederatedKeyHandler implements KeyHandler {
       config.location,
       config.keyRingId,
       config.keyId,
-      "latest"
+      "1"
     );
   }
 
