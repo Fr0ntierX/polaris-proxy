@@ -21,6 +21,7 @@ export const getConfig = () => {
   const enableCORS = process.env.POLARIS_CONTAINER_ENABLE_CORS === "true";
   const enableInputEncryption = process.env.POLARIS_CONTAINER_ENABLE_INPUT_ENCRYPTION === "true";
   const enableOutputEncryption = process.env.POLARIS_CONTAINER_ENABLE_OUTPUT_ENCRYPTION === "true";
+  const polarisUrlHeaderKey = process.env.POLARIS_CONTAINER_URL_HEADER_KEY || "polaris-url";
   const polarisHeaderKey = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-secure";
   const polarisResponsePublicKeyHeader = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-response-public-key";
   const polarisContextRoot = process.env.POLARIS_CONTAINER_CONTEXT_ROOT || "";
@@ -38,6 +39,7 @@ export const getConfig = () => {
     enableCORS,
     enableInputEncryption,
     enableOutputEncryption,
+    polarisUrlHeaderKey,
     polarisHeaderKey,
     polarisResponsePublicKeyHeader,
     polarisContextRoot,
