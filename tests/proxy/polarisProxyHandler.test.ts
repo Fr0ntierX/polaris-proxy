@@ -46,6 +46,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     workloadBaseUrl: `http://localhost:${WORKLOAD_PORT}`,
     keyType: "ephemeral",
     polarisContextRoot: contextRoot,
+    polarisUrlHeaderKey: "polaris-url",
     polarisHeaderKey: "polaris-secure",
     polarisResponsePublicKeyHeader: "polaris-response-public-key",
     enableInputEncryption: true,
