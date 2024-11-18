@@ -101,8 +101,6 @@ export class PolarisProxyHandler {
       proxyReqPathResolver: (proxyReq: Request) => {
         const url = req.workloadRequest?.url || `${req.baseUrl}${req.url === "/" ? "" : req.url}`;
 
-        console.log("DBG:", req.workloadRequest?.url, url);
-
         getLogger().info(`Forwarding request to: ${url}`);
 
         return url;
