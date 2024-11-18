@@ -9,7 +9,6 @@ import type { NextFunction, Request, Response } from "express";
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleErrors = (err: any, req: Request, res: Response, next: NextFunction) => {
-  // todo: edge case req.log - undefined in some stages
   console.error(err);
 
   if (err instanceof Error) {
