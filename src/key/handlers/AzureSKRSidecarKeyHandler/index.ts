@@ -63,6 +63,7 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
       {
         key: this.privateKey,
         padding: constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: "sha256",
       },
       _wrappedKey
     );
