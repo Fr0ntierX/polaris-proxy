@@ -11,7 +11,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    environment: Docker
+    environment: Docker Dev
 
     permissions:
       id-token: write
@@ -19,10 +19,10 @@ jobs:
 
     env:
       IMAGE_NAME: polaris-proxy
-      GCP_PROJECT_ID: fr0ntierx-public
+      GCP_PROJECT_ID: fr0ntierx-public-dev
       GCP_REGION: global
-      GCP_SERVICE_ACCOUNT: github-actions-sa@fr0ntierx-public.iam.gserviceaccount.com
-      GAR_REPO: us-docker.pkg.dev/fr0ntierx-public/fr0ntierx-public-registry/polaris-proxy
+      GCP_SERVICE_ACCOUNT: github-actions-sa@fr0ntierx-public-dev.iam.gserviceaccount.com
+      GAR_REPO: us-docker.pkg.dev/fr0ntierx-public-dev/fr0ntierx-public-dev-registry/polaris-proxy
 
     steps:
       - name: Checkout code
@@ -32,7 +32,7 @@ jobs:
         uses: "google-github-actions/auth@v2"
         with:
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-          workload_identity_provider: projects/1034768436478/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          workload_identity_provider: projects/59003008716/locations/global/workloadIdentityPools/github-pool/providers/github-provider
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
