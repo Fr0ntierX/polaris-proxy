@@ -4,6 +4,7 @@ import helmet from "helmet";
 
 import { getConfig } from "./config";
 import { getLogger } from "./logging";
+import handleErrors from "./middleware/handleErrors";
 import { registerEncryptionProxy } from "./proxy";
 import { registerSystemEndpoints } from "./system";
 
@@ -42,6 +43,8 @@ registerEncryptionProxy(app);
 if (enableCORS) {
   app.options("*", cors());
 }
+
+app.use(handleErrors);
 
 // Start the server
 const port = process.env.PORT || 3000;

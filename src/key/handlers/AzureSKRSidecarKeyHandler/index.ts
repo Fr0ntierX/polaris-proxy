@@ -5,6 +5,8 @@ import jwkToPem from "jwk-to-pem";
 
 import { getConfigFromEnv } from "./utils";
 
+import { getLogger } from "../../../logging";
+
 import type { KeyHandler } from "@fr0ntier-x/polaris-sdk";
 
 export class AzureSKRSidecarKeyHandler implements KeyHandler {
@@ -25,11 +27,11 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
 
         this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
         this.publicKey = jwkToPem(key as jwkToPem.JWK);
-        console.log("Key released successfully");
+        getLogger().info("Key released successfully");
         return;
       } catch (error: any) {
         if (attempt < maxSKRRequestRetries) {
-          console.warn(`Attempt ${attempt} failed. Retrying in ${skrRetryInterval / 1000} seconds...`);
+          getLogger().warn(`Attempt ${attempt} failed. Retrying in ${skrRetryInterval / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, skrRetryInterval));
         } else {
           throw new Error(`Failed to obtain key after ${maxSKRRequestRetries} attempts: ${error.message}`);
