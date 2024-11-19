@@ -1,0 +1,56 @@
+name: Build and Push Docker Image GCP
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - src/**
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: Docker Dev
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      IMAGE_NAME: polaris-proxy
+      GCP_PROJECT_ID: fr0ntierx-public-dev
+      GCP_REGION: global
+      GCP_SERVICE_ACCOUNT: github-actions-sa@fr0ntierx-public-dev.iam.gserviceaccount.com
+      GAR_REPO: us-docker.pkg.dev/fr0ntierx-public-dev/fr0ntierx-public-dev-registry/polaris-proxy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: projects/59003008716/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Google Artifact Registry
+        run: |
+          gcloud auth configure-docker us-docker.pkg.dev --quiet
+
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME .
+
+      - name: Tag image for Google Artifact Registry
+        run: |
+          docker tag $IMAGE_NAME $GAR_REPO:latest
+
+      - name: Push image to Google Artifact Registry
+        run: |
+          docker push $GAR_REPO:latest
