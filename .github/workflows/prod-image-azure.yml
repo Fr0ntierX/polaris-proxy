@@ -1,9 +1,9 @@
-name: Build and Push Docker Image Azure
+name: (PRODUCTION) Build and Push Docker Image Azure
 
 on:
   push:
     branches:
-      - dev
+      - release/prod
     paths:
       - src/**
   workflow_dispatch:

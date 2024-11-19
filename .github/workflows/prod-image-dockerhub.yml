@@ -1,9 +1,9 @@
-name: Build and Push Docker Image DockerHub
+name: (PRODUCTION) Build and Push Docker Image DockerHub
 
 on:
   push:
     branches:
-      - dev
+      - release/prod
     paths:
       - src/**
   workflow_dispatch:
