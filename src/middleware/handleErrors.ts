@@ -1,3 +1,5 @@
+import { getLogger } from "../logging";
+
 import type { NextFunction, Request, Response } from "express";
 /**
  * Middleware to handle errors and return proper responses.
@@ -9,7 +11,7 @@ import type { NextFunction, Request, Response } from "express";
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleErrors = (err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
+  getLogger().error(err);
 
   if (err instanceof Error) {
     res.status(400).json({ error: err.message });
