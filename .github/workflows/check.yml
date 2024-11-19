@@ -29,3 +29,5 @@ jobs:
         run: yarn check
       - name: Run unit tests
         run: yarn test
+      - name: Build Docker image
+        run: docker build -t polaris-proxy .
