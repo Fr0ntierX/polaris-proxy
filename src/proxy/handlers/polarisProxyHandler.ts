@@ -1,3 +1,6 @@
+import { Readable, Transform } from "stream";
+
+import axios from "axios";
 import proxy from "express-http-proxy";
 
 import { getLogger } from "../../logging";
@@ -5,19 +8,66 @@ import { getLogger } from "../../logging";
 import type { Config } from "../../config/types";
 import type { PolarisRequest } from "../types";
 import type { PolarisSDK } from "@fr0ntier-x/polaris-sdk";
+import type { AxiosRequestConfig, AxiosResponse } from "axios";
 import type { NextFunction, Request, Response } from "express";
 import type { RequestOptions } from "http";
 import type { Logger } from "pino";
+
+class EncryptStream extends Transform {
+  private sdk: PolarisSDK;
+  private publicKey: string;
+
+  constructor(sdk: PolarisSDK, publicKey: string) {
+    super();
+    this.sdk = sdk;
+    this.publicKey = publicKey;
+  }
+
+  async _transform(chunk: Buffer, encoding: string, callback: Function) {
+    try {
+      chunk = Buffer.from(chunk);
+      const encryptedChunk = await this.sdk.encrypt(chunk, this.publicKey);
+      this.push(encryptedChunk);
+      callback();
+    } catch (error) {
+      callback(error);
+    }
+  }
+}
 
 export class PolarisProxyHandler {
   private readonly polarisSDK: PolarisSDK;
   private readonly config: Config;
   private readonly logger: Logger;
+  private readonly axiosInstance = axios.create();
 
   constructor(polarisSDK: PolarisSDK, config: Config) {
     this.polarisSDK = polarisSDK;
     this.config = config;
     this.logger = getLogger();
+    this.axiosInstance.interceptors.response.use(this.axiosStreamEncryptResponseInterceptor());
+  }
+
+  private axiosStreamEncryptResponseInterceptor(): (response: AxiosResponse) => Promise<AxiosResponse> {
+    return async (response: AxiosResponse): Promise<AxiosResponse> => {
+      const pubKey = response.config.headers[this.config.polarisResponsePublicKeyHeader];
+      const publicKey = Buffer.from(pubKey, "base64").toString();
+      if (response.data instanceof Readable) {
+        const encryptTransform = new EncryptStream(this.polarisSDK, publicKey);
+        response.data = response.data.pipe(encryptTransform);
+        response.config.responseType = "stream";
+      } else if (response.data instanceof Buffer) {
+        response.data = await this.polarisSDK.encrypt(response.data, publicKey);
+        response.config.responseType = "arraybuffer";
+      } else if (typeof response.data === "string") {
+        response.data = await this.polarisSDK.encrypt(Buffer.from(response.data), publicKey);
+        response.config.responseType = "arraybuffer";
+      } else if (response.data instanceof Uint8Array) {
+        response.data = await this.polarisSDK.encrypt(Buffer.from(response.data.toString()), publicKey);
+        response.config.responseType = "arraybuffer";
+      }
+      return response;
+    };
   }
 
   private async getRawBody(req: PolarisRequest): Promise<Buffer | undefined> {
@@ -33,8 +83,22 @@ export class PolarisProxyHandler {
     return await this.polarisSDK.decrypt(data);
   }
 
-  private async encryptResponse(responseData: Buffer, publicKey: string): Promise<Buffer> {
-    return await this.polarisSDK.encrypt(responseData, publicKey);
+  isStream(req: Request) {
+    // Basic check: is req a readable stream?
+    if (!(req instanceof Readable)) {
+      return false;
+    }
+
+    // Additional checks for headers
+    const contentType = req.headers["content-type"];
+    const transferEncoding = req.headers["transfer-encoding"];
+
+    // Optional: Adjust based on your use case
+    if (transferEncoding === "chunked" || contentType === "application/octet-stream") {
+      return true;
+    }
+
+    return false;
   }
 
   async polarisUnwrap(req: PolarisRequest, res: Response, next: NextFunction): Promise<void> {
@@ -50,18 +114,22 @@ export class PolarisProxyHandler {
       // Process the request parameters
       if (this.config.enableInputEncryption) {
         // Process the URL
-        const decryptedUrl = await this.decryptData(
-          Buffer.from(req.headers[this.config.polarisUrlHeaderKey] as string, "base64")
-        );
-        const workloadUrl = decryptedUrl.toString();
+        const decryptedUrl = req.headers[this.config.polarisUrlHeaderKey]
+          ? await this.decryptData(Buffer.from(req.headers[this.config.polarisUrlHeaderKey] as string, "base64"))
+          : undefined;
+
+        const workloadUrl = decryptedUrl ? decryptedUrl.toString() : req.baseUrl;
         this.logger.debug(`Decrypted workload URL: ${workloadUrl}`);
 
         // Process the headers
-        const decryptedHeaders = await this.decryptData(
-          Buffer.from(req.headers[this.config.polarisHeaderKey] as string, "base64")
+        const decryptedHeaders = req.headers[this.config.polarisHeaderKey]
+          ? await this.decryptData(Buffer.from(req.headers[this.config.polarisHeaderKey] as string, "base64"))
+          : undefined;
+
+        const workloadHeaders = decryptedHeaders ? JSON.parse(decryptedHeaders.toString()) : undefined;
+        this.logger.debug(
+          `Decrypted workload headers: ${workloadHeaders ? Object.keys(workloadHeaders).join(", ") : ""}`
         );
-        const workloadHeaders = JSON.parse(decryptedHeaders.toString());
-        this.logger.debug(`Decrypted workload headers: ${Object.keys(workloadHeaders).join(", ")}`);
 
         // Process the body
         const bodyBuffer = await this.getRawBody(req);
@@ -95,46 +163,64 @@ export class PolarisProxyHandler {
   }
 
   polarisProxy(req: PolarisRequest, res: Response, next: NextFunction): void {
+    const isStream = req.headers["response-type"] == "stream";
+    if (isStream) {
+      this.axiosProxy(req, res, next);
+    } else {
+      this.expressHttpProxy(req, res, next);
+    }
+  }
+
+  async expressHttpProxy(req: PolarisRequest, res: Response, next: NextFunction): Promise<void> {
     proxy(this.config.workloadBaseUrl, {
       parseReqBody: false,
-
       proxyReqPathResolver: (proxyReq: Request) => {
         const url = req.workloadRequest?.url || `${req.baseUrl}${req.url === "/" ? "" : req.url}`;
-
         getLogger().info(`Forwarding request to: ${url}`);
-
-        return url;
+        return url.replace(/\/{2,}/g, "/").replace(":/", "://");
       },
-
       proxyReqOptDecorator: (proxyReqOpts: RequestOptions, srcReq: Request) => {
         if (req.workloadRequest?.headers) {
           proxyReqOpts.headers = req.workloadRequest.headers;
         }
-
         return proxyReqOpts;
       },
-
       proxyReqBodyDecorator: (bodyContent: unknown, srcReq: Request) => {
         const body = req.workloadRequest?.body || bodyContent;
         return body;
       },
-
       userResDecorator: async (proxyRes, proxyResData, userReq, userRes) => {
-        if (this.config.enableOutputEncryption) {
-          if (!req.workloadRequest?.responsePublicKey) {
-            throw new Error("Response public key is required for output encryption");
-          }
-
-          const encryptedResponse = await this.encryptResponse(
-            proxyResData,
-            req.workloadRequest?.responsePublicKey as string
-          );
-
-          return encryptedResponse.toString("base64");
-        } else {
-          return proxyResData;
+        if (this.config.enableOutputEncryption && req.workloadRequest?.responsePublicKey) {
+          proxyResData = await this.polarisSDK.encrypt(proxyResData, req.workloadRequest?.responsePublicKey);
+          return proxyResData.toString("base64");
         }
+        return proxyResData;
       },
     })(req, res, next);
+  }
+
+  async axiosProxy(req: PolarisRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const url = req.workloadRequest?.url || `${req.baseUrl}${req.url === "/" ? "" : req.url}`;
+      getLogger().info(`Forwarding request to: ${url}`);
+      const target = url.replace(/\/{2,}/g, "/").replace(":/", "://");
+      const axiosConfig: AxiosRequestConfig = {
+        method: req.method,
+        url: `${this.config.workloadBaseUrl}${target}`,
+        headers: {
+          [this.config.polarisResponsePublicKeyHeader]: req.headers[this.config.polarisResponsePublicKeyHeader],
+          ...req.workloadRequest?.headers,
+        },
+        data: req.workloadRequest?.body,
+        responseType: "stream",
+      };
+      const axiosResponse: AxiosResponse = await this.axiosInstance(axiosConfig);
+      res.set(axiosResponse.headers);
+      res.status(axiosResponse.status);
+      axiosResponse.data.pipe(res);
+    } catch (error) {
+      getLogger().error(`Error in polarisProxy: ${error}`);
+      next(error);
+    }
   }
 }

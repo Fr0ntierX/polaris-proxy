@@ -12,6 +12,7 @@ import { PolarisProxyHandler } from "../../src/proxy/handlers/polarisProxyHandle
 import type { Config } from "../../src/config/types";
 import type { NextFunction, Request } from "express";
 import type http from "http";
+import { getLogger } from "../../src/logging";
 
 const polarisSDK = new PolarisSDK(new EphemeralKeyHandler());
 
@@ -33,8 +34,8 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
   let polarisApp = express();
   let workloadApp = express();
 
-  const POLARIS_PORT = 3030;
-  const WORKLOAD_PORT = 3031;
+  const POLARIS_PORT = 3431;
+  const WORKLOAD_PORT = 3432;
 
   let polarisServer: http.Server;
   let workloadServer: http.Server;
@@ -117,86 +118,83 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
   });
 
   it("should handle encrypted proxy request with query params, body and headers", async () => {
-    try {
-      // Test data
-      const testRequest = {
-        path: "hello?world=1",
-        headers: { "custom-header": "helloworld" },
-        body: "helloWorld",
-      };
+    // Test data
+    const testRequest = {
+      path: "hello?world=1",
+      headers: { "custom-header": "helloworld" },
+      body: "helloWorld",
+    };
 
-      // Client-side encryption
-      const polarisUrl = `http://localhost:${POLARIS_PORT}`;
+    // Client-side encryption
+    const polarisUrl = `http://localhost:${POLARIS_PORT}`;
 
-      // encryptions
-      const encryptedPath = await encryptDataForContainer(testRequest.path);
-      const encryptedHeaders = await encryptDataForContainer(JSON.stringify(testRequest.headers));
-      const encryptedBody = await encryptDataForContainer(testRequest.body);
+    // encryptions
+    const encryptedPath = await encryptDataForContainer(testRequest.path);
+    const encryptedHeaders = await encryptDataForContainer(JSON.stringify(testRequest.headers));
+    const encryptedBody = await encryptDataForContainer(testRequest.body);
 
-      // raw Check
-      const clearPath = await polarisSDK.decrypt(encryptedPath);
-      expect(clearPath.toString()).toEqual(testRequest.path);
+    // raw Check
+    const clearPath = await polarisSDK.decrypt(encryptedPath);
+    expect(clearPath.toString()).toEqual(testRequest.path);
 
-      // Create mock request with encrypted data
-      const endpoint = `${polarisUrl}/${contextRoot}/${encryptedPath.toString("hex")}`;
+    // Create mock request with encrypted data
+    const endpoint = `${polarisUrl}/${contextRoot}/${encryptedPath.toString("hex")}`;
 
-      let result = await axios.post(endpoint, encryptedBody, {
-        headers: {
-          "Content-Type": "application/octet-stream",
-          "polaris-secure": encryptedHeaders.toString("hex"),
-        },
-        responseType: "arraybuffer",
-      });
+    const publicKey64 = Buffer.from(await polarisSDK.getPublicKey()).toString("base64");
 
-      console.log("result bytesLen", result.data.length);
+    let result = await axios.post(endpoint, encryptedBody, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "polaris-response-public-key": publicKey64,
+        "polaris-secure": encryptedHeaders.toString("base64"),
+      },
+      responseType: "arraybuffer",
+    });
 
-      const roundOne = await polarisSDK.decrypt(result.data);
-      console.log("round one decrypted");
+    const roundOne = await polarisSDK.decrypt(Buffer.from(result.data.toString(), "base64"));
 
-      const roundTwo = await polarisSDK.decrypt(roundOne);
-      console.log("roundTwo:", roundTwo.toString());
+    const roundTwo = await polarisSDK.decrypt(roundOne);
 
-      expect(roundTwo.toString()).toEqual(testRequest.body);
-    } catch (err) {
-      console.error("got error", err);
-    }
+    expect(roundTwo.toString()).toEqual(testRequest.body);
   });
 
   it("should handle encrypted proxy request with axios interceptor", async () => {
-    try {
-      // Client-side encryption
-      const polarisUrl = `http://localhost:${POLARIS_PORT}`;
+    // Client-side encryption
+    const polarisUrl = `http://localhost:${POLARIS_PORT}`;
 
-      // Create mock request with encrypted data
-      // Test data
-      const testRequest = {
-        path: "hello?world=1",
-        headers: { "custom-header": "helloworld" },
-        body: "helloWorld",
-      };
+    // Create mock request with encrypted data
+    // Test data
+    const testRequest = {
+      path: "hello?world=1",
+      headers: { "custom-header": "helloworld" },
+      body: "helloWorld",
+    };
 
-      const basePath = `${polarisUrl}/${contextRoot}`;
+    const basePath = `${polarisUrl}/${contextRoot}`;
 
-      axios.interceptors.request.use(createAxiosRequestInterceptor({ polarisSDK, polarisProxyBasePath: contextRoot }));
-      axios.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
+    axios.interceptors.request.use(
+      createAxiosRequestInterceptor({
+        polarisSDK,
+        publicKey: await polarisSDK.getPublicKey(),
+        enableOutputEncryption: workloadConfig.enableOutputEncryption,
+        polarisProxyBasePath: contextRoot,
+      })
+    );
+    axios.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
 
-      const endpoint = `${basePath}/${testRequest.path}`;
+    const endpoint = `${basePath}/${testRequest.path}`;
 
-      let result = await axios.post(endpoint, testRequest.body, {
-        headers: testRequest.headers,
-        responseType: "arraybuffer",
-      });
-      console.log("axios result bytesLen", result.data.length);
+    let result = await axios.post(endpoint, testRequest.body, {
+      headers: testRequest.headers,
+      responseType: "arraybuffer",
+    });
 
-      if (workloadConfig.enableOutputEncryption) {
-        result.data = await polarisSDK.decrypt(result.data);
-        console.log("axios round 2 bytesLen", result.data.length);
-      }
-
-      expect(result.data.toString()).toEqual(testRequest.body);
-    } catch (err) {
-      console.error("got error", err);
-    } finally {
+    if (workloadConfig.enableOutputEncryption) {
+      result.data = await polarisSDK.decrypt(result.data);
     }
+
+    getLogger().info({ result: result.data.toString(), original: testRequest.body });
+
+    expect(result.data.toString()).toEqual(testRequest.body);
   });
 });
