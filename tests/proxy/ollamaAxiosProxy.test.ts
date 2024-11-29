@@ -5,7 +5,7 @@ import axios from "axios";
 import express from "express";
 
 import { getLogger } from "../../src/logging";
-import { PolarisProxyHandler } from "../../src/proxy/handlers/polarisProxyHandler";
+import { AxiosProxyHandler } from "../../src/proxy/handlers/axiosProxyHandler";
 
 import type { Config } from "../../src/config/types";
 import type { AxiosResponse } from "axios";
@@ -34,12 +34,12 @@ class DecryptStream extends Transform {
 
 describe("PolarisProxyHandler End-to-End Encryption", () => {
   let mockConfig: Config;
-  let handler: PolarisProxyHandler;
+  let handler: AxiosProxyHandler;
   let contextRoot = "";
 
   let polarisApp = express();
 
-  const POLARIS_PORT = 4565;
+  const POLARIS_PORT = 4534;
   const WORKLOAD_PORT = 11434;
 
   let polarisServer: http.Server;
@@ -62,7 +62,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     logLevel: "debug",
   };
 
-  handler = new PolarisProxyHandler(polarisSDK, mockConfig);
+  handler = new AxiosProxyHandler(polarisSDK, mockConfig);
   jest.setTimeout(15000); // Set timeout to 10 seconds (10000 ms)
 
   async function bootServers() {
@@ -158,7 +158,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
           })
           .then((response) => {
             const chunks: Buffer[] = [];
-            response.data.on("data", (chunk: Buffer) => {
+            response.data.on("data", async (chunk: Buffer) => {
               try {
                 chunks.push(chunk);
                 getLogger().info("pushing...", i++);
@@ -187,6 +187,8 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
 
     getLogger().info("chunks", i);
     getLogger().info("result:", response.toString());
+
+    console.log(response.toString());
 
     expect(response.byteLength).toBeGreaterThan(0);
   });

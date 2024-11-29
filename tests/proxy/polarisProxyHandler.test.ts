@@ -1,18 +1,14 @@
-import {
-  PolarisSDK,
-  createAxiosRequestInterceptor,
-  createAxiosResponseInterceptor,
-  EphemeralKeyHandler,
-} from "@fr0ntier-x/polaris-sdk";
+import { PolarisSDK, createAxiosRequestInterceptor, EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk";
 import axios from "axios";
 import express from "express";
 
+import { getLogger } from "../../src/logging";
+import { AxiosProxyHandler, axiosProxyResponseInterceptor } from "../../src/proxy/handlers/axiosProxyHandler";
 import { PolarisProxyHandler } from "../../src/proxy/handlers/polarisProxyHandler";
 
 import type { Config } from "../../src/config/types";
 import type { NextFunction, Request } from "express";
 import type http from "http";
-import { getLogger } from "../../src/logging";
 
 const polarisSDK = new PolarisSDK(new EphemeralKeyHandler());
 
@@ -29,6 +25,7 @@ export const encryptDataForContainer = async (data: string): Promise<Buffer> => 
 describe("PolarisProxyHandler End-to-End Encryption", () => {
   let mockConfig: Config;
   let handler: PolarisProxyHandler;
+  let axiosHandler: AxiosProxyHandler;
   let contextRoot = "polaris-root";
 
   let polarisApp = express();
@@ -62,6 +59,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
   };
 
   handler = new PolarisProxyHandler(polarisSDK, mockConfig);
+  axiosHandler = new AxiosProxyHandler(polarisSDK, mockConfig);
 
   const rawBody = async (req: Request): Promise<Buffer | undefined> => {
     return new Promise((resolve, reject) => {
@@ -78,7 +76,11 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
         .get(`/polaris-container/publicKey`, async (req: express.Request, res: express.Response) => {
           res.json({ publicKey: await polarisSDK.getPublicKey() });
         })
-        .use(`/${contextRoot}/*`, handler.polarisUnwrap.bind(handler), handler.polarisProxy.bind(handler))
+        .use(
+          `/${contextRoot}/*`,
+          axiosHandler.polarisUnwrap.bind(axiosHandler),
+          axiosHandler.polarisProxy.bind(axiosHandler)
+        )
         .use((err: any, _req: express.Request, res: express.Response, _next: NextFunction) => {
           console.error(err.stack, err);
           res.status(500).send("Something broke!");
@@ -151,11 +153,11 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
       responseType: "arraybuffer",
     });
 
-    const roundOne = await polarisSDK.decrypt(Buffer.from(result.data.toString(), "base64"));
+    const data = result.data?.length == 0 ? result.config.data : result.data;
 
-    const roundTwo = await polarisSDK.decrypt(roundOne);
+    const clear = await polarisSDK.decrypt(Buffer.from(data));
 
-    expect(roundTwo.toString()).toEqual(testRequest.body);
+    expect(clear.toString()).toEqual(testRequest.body);
   });
 
   it("should handle encrypted proxy request with axios interceptor", async () => {
@@ -180,18 +182,13 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
         polarisProxyBasePath: contextRoot,
       })
     );
-    axios.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
+    axios.interceptors.response.use(axiosProxyResponseInterceptor(polarisSDK));
 
     const endpoint = `${basePath}/${testRequest.path}`;
 
     let result = await axios.post(endpoint, testRequest.body, {
       headers: testRequest.headers,
-      responseType: "arraybuffer",
     });
-
-    if (workloadConfig.enableOutputEncryption) {
-      result.data = await polarisSDK.decrypt(result.data);
-    }
 
     getLogger().info({ result: result.data.toString(), original: testRequest.body });
 
