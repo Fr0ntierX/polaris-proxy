@@ -5,7 +5,7 @@ import axios from "axios";
 import express from "express";
 
 import { getLogger } from "../../src/logging";
-import { AxiosProxyHandler } from "../../src/proxy/handlers/axiosProxyHandler";
+import { AxiosProxyHandler, axiosProxyResponseInterceptor } from "../../src/proxy/handlers/axiosProxyHandler";
 
 import type { Config } from "../../src/config/types";
 import type { AxiosResponse } from "axios";
@@ -13,24 +13,6 @@ import type { NextFunction } from "express";
 import type http from "http";
 
 const axiosInstance = axios.create();
-
-class DecryptStream extends Transform {
-  private sdk: PolarisSDK;
-  constructor(sdk: PolarisSDK) {
-    super();
-    this.sdk = sdk;
-  }
-
-  async _transform(chunk: Buffer, encoding: string, callback: Function) {
-    try {
-      const decryptedChunk = await this.sdk.decrypt(chunk);
-      this.push(decryptedChunk); // Push decrypted chunk to the next step
-      callback(); // Indicate that the chunk has been processed
-    } catch (error) {
-      callback(error); // Propagate error
-    }
-  }
-}
 
 describe("PolarisProxyHandler End-to-End Encryption", () => {
   let mockConfig: Config;
@@ -116,34 +98,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
       })
     );
 
-    // Function to handle the decryption of the body stream
-    const decryptStreamData = (sdk: PolarisSDK, stream: Readable): Readable => {
-      // Create a transform stream that will decrypt chunks
-      const decryptTransform = new DecryptStream(sdk);
-
-      // Pipe the input stream through the decryption transform stream
-      return stream.pipe(decryptTransform);
-    };
-
-    function axiosStreamResponseInterceptor(sdk: PolarisSDK): (response: AxiosResponse) => Promise<AxiosResponse> {
-      return async (response: AxiosResponse): Promise<AxiosResponse> => {
-        // if (response.headers["polaris-read"]) return response;
-        // response.headers["polaris-read"] = "ok";
-        // Decrypt the body if it exists
-        if (response.data instanceof Readable) {
-          // Handle stream data with incremental decryption
-          response.data = decryptStreamData(sdk, response.data);
-          response.config.responseType = "stream";
-        } else if (response.data) {
-          // Handle regular data
-          response.data = await sdk.decrypt(response.data);
-          response.config.responseType = "arraybuffer";
-        }
-        return response;
-      };
-    }
-
-    axiosInstance.interceptors.response.use(axiosStreamResponseInterceptor(polarisSDK));
+    axiosInstance.interceptors.response.use(axiosProxyResponseInterceptor(polarisSDK));
 
     const endpoint = `${polarisBase}${testRequest.path}`;
 
@@ -158,23 +113,27 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
           })
           .then((response) => {
             const chunks: Buffer[] = [];
-            response.data.on("data", async (chunk: Buffer) => {
-              try {
-                chunks.push(chunk);
-                getLogger().info("pushing...", i++);
-                getLogger().info("got chunk", chunk.toString());
-              } catch (error) {
-                getLogger().info(chunk.toString());
-              }
-            });
-            response.data.on("end", async () => {
-              getLogger().info("Response stream has ended.");
-              res(Buffer.concat(chunks));
-            });
-            response.data.on("error", (err: Error) => {
-              console.error("Streaming error: ", err.message);
-              rej(err);
-            });
+            if (response.data instanceof Readable) {
+              response.data.on("data", async (chunk: Buffer) => {
+                try {
+                  chunks.push(chunk);
+                  getLogger().info("pushing...", i++);
+                  getLogger().info("got chunk", chunk.toString());
+                } catch (error) {
+                  getLogger().info(chunk.toString());
+                }
+              });
+              response.data.on("end", async () => {
+                getLogger().info("Response stream has ended.");
+                res(Buffer.concat(chunks));
+              });
+              response.data.on("error", (err: Error) => {
+                console.error("Streaming error: ", err.message);
+                rej(err);
+              });
+            } else {
+              res(response.data);
+            }
           })
           .catch((error) => {
             console.error("Error making the request: ", error);

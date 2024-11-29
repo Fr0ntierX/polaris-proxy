@@ -36,11 +36,14 @@ export const decryptStreamData = (sdk: PolarisSDK, stream: Readable): Readable =
 
 export function axiosProxyResponseInterceptor(sdk: PolarisSDK): (response: AxiosResponse) => Promise<AxiosResponse> {
   return async (response: AxiosResponse): Promise<AxiosResponse> => {
-    if (response.config.data instanceof Readable) {
-      response.data = decryptStreamData(sdk, response.data);
+    const rspData = response.data;
+    const cnfData = response.config.data;
+    const data = rspData instanceof Readable ? rspData : cnfData;
+    if (data instanceof Readable) {
+      response.data = decryptStreamData(sdk, data);
       response.config.responseType = "stream";
     } else if (response.config.data) {
-      response.data = await sdk.decrypt(response.config.data);
+      response.data = await sdk.decrypt(data);
       response.config.responseType = "arraybuffer";
     }
     return response;
