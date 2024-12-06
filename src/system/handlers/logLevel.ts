@@ -1,10 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
-import { getConfig } from "../../config";
+import { getLogger } from "../../logging";
 
 export const logLevelHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { enableLogging, logLevel } = getConfig();
-    res.json({ level: enableLogging ? logLevel : "silent" });
+    res.json({ level: getLogger().level });
   } catch (err: any) {
     next(err);
   }
