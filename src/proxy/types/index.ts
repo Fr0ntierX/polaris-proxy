@@ -4,7 +4,7 @@ export interface PolarisRequest extends Request {
   workloadRequest?: {
     url: string;
     headers: Record<string, string>;
-    body?: Buffer;
+    body?: any;
     responsePublicKey?: string;
   };
 }
