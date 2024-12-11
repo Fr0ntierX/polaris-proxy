@@ -16,16 +16,16 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
   constructor() {}
 
   private async init() {
-    const { maxSKRRequestRetries, skrRetryInterval, ...skrConfig } = getConfigFromEnv();
+    const { maxSKRRequestRetries, skrRetryInterval, keyReleaseEndpoint, ...skrConfig } = getConfigFromEnv();
 
     let attempt = 0;
     while (attempt < maxSKRRequestRetries) {
       try {
         attempt++;
-        const { data } = await axios.post("http://localhost:8080/key/release", skrConfig);
-        const key = JSON.parse(data.key);
+        const { data } = await axios.post(`${keyReleaseEndpoint}/key/release`, skrConfig);
 
         if (data.key) {
+          const key = JSON.parse(data.key);
           this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
           this.publicKey = jwkToPem(key as jwkToPem.JWK);
         } else {
