@@ -1,6 +1,7 @@
 import type { AzureSKRSidecarKeyConfig } from "../types";
 
 export const getConfigFromEnv = (): AzureSKRSidecarKeyConfig => {
+  const keyReleaseEndpoint = process.env.POLARIS_CONTAINER_AZURE_SKR_KEY_RELEASE_ENDPOINT || "http://localhost:8080";
   const maaEndpoint = process.env.POLARIS_CONTAINER_AZURE_SKR_MAA_ENDPOINT;
   const akvEndpoint = process.env.POLARIS_CONTAINER_AZURE_SKR_AKV_ENDPOINT;
   const kid = process.env.POLARIS_CONTAINER_AZURE_SKR_KID;
@@ -19,5 +20,6 @@ export const getConfigFromEnv = (): AzureSKRSidecarKeyConfig => {
     access_token: accessToken,
     maxSKRRequestRetries,
     skrRetryInterval,
+    keyReleaseEndpoint,
   };
 };
