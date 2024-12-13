@@ -1,10 +1,14 @@
-import { PolarisSDK, createAxiosRequestInterceptor, EphemeralKeyHandler } from "@fr0ntier-x/polaris-sdk";
+import {
+  PolarisSDK,
+  createAxiosRequestInterceptor,
+  EphemeralKeyHandler,
+  createAxiosResponseInterceptor,
+} from "@fr0ntier-x/polaris-sdk";
 import axios from "axios";
 import express from "express";
 
 import { getLogger } from "../../src/logging";
-import { AxiosProxyHandler, axiosProxyResponseInterceptor } from "../../src/proxy/handlers/axiosProxyHandler";
-import { PolarisProxyHandler } from "../../src/proxy/handlers/polarisProxyHandler";
+import { PolarisProxyHandler } from "../../src/proxy/handlers/PolarisProxyHandler";
 
 import type { Config } from "../../src/config/types";
 import type { NextFunction, Request } from "express";
@@ -24,8 +28,7 @@ export const encryptDataForContainer = async (data: string): Promise<Buffer> => 
 
 describe("PolarisProxyHandler End-to-End Encryption", () => {
   let mockConfig: Config;
-  let handler: PolarisProxyHandler;
-  let axiosHandler: AxiosProxyHandler;
+  let axiosHandler: PolarisProxyHandler;
   let contextRoot = "polaris-root";
 
   let polarisApp = express();
@@ -47,6 +50,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     polarisUrlHeaderKey: "polaris-url",
     polarisHeaderKey: "polaris-secure",
     polarisResponsePublicKeyHeader: "polaris-response-public-key",
+    polarisResponseWrappedKeyHeader: "polaris-response-wrapped-key",
     enableInputEncryption: true,
     enableLogging: false,
     enableCORS: false,
@@ -58,8 +62,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     enableOutputEncryption: true,
   };
 
-  handler = new PolarisProxyHandler(polarisSDK, mockConfig);
-  axiosHandler = new AxiosProxyHandler(polarisSDK, mockConfig);
+  axiosHandler = new PolarisProxyHandler(polarisSDK, mockConfig);
 
   const rawBody = async (req: Request): Promise<Buffer | undefined> => {
     return new Promise((resolve, reject) => {
@@ -182,7 +185,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
         polarisProxyBasePath: contextRoot,
       })
     );
-    axios.interceptors.response.use(axiosProxyResponseInterceptor(polarisSDK));
+    axios.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
 
     const endpoint = `${basePath}/${testRequest.path}`;
 

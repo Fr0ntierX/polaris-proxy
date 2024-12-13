@@ -1,11 +1,16 @@
 import { Readable, Transform } from "stream";
 
-import { createAxiosRequestInterceptor, EphemeralKeyHandler, PolarisSDK } from "@fr0ntier-x/polaris-sdk";
+import {
+  createAxiosRequestInterceptor,
+  createAxiosResponseInterceptor,
+  EphemeralKeyHandler,
+  PolarisSDK,
+} from "@fr0ntier-x/polaris-sdk";
 import axios from "axios";
 import express from "express";
 
 import { getLogger } from "../../src/logging";
-import { PolarisProxyHandler } from "../../src/proxy/handlers/polarisProxyHandler";
+import { PolarisProxyHandler } from "../../src/proxy/handlers/PolarisProxyHandler";
 
 import type { Config } from "../../src/config/types";
 import type { AxiosResponse } from "axios";
@@ -55,6 +60,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     polarisUrlHeaderKey: "polaris-url",
     polarisHeaderKey: "polaris-secure",
     polarisResponsePublicKeyHeader: "polaris-response-public-key",
+    polarisResponseWrappedKeyHeader: "polaris-response-wrapped-key",
     enableInputEncryption: true,
     enableLogging: false,
     enableCORS: false,
@@ -143,7 +149,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
       };
     }
 
-    axiosInstance.interceptors.response.use(axiosStreamResponseInterceptor(polarisSDK));
+    axiosInstance.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
 
     const endpoint = `${polarisBase}${testRequest.path}`;
 

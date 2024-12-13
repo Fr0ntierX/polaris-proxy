@@ -23,6 +23,7 @@ export interface Config {
   polarisUrlHeaderKey: string;
   polarisHeaderKey: string;
   polarisResponsePublicKeyHeader: string;
+  polarisResponseWrappedKeyHeader: string;
   polarisContextRoot: string;
   logLevel: string;
 }

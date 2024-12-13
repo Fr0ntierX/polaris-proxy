@@ -1,14 +1,18 @@
-import { Readable, Transform } from "stream";
+import { Readable } from "stream";
 
-import { createAxiosRequestInterceptor, EphemeralKeyHandler, PolarisSDK } from "@fr0ntier-x/polaris-sdk";
+import {
+  createAxiosRequestInterceptor,
+  createAxiosResponseInterceptor,
+  EphemeralKeyHandler,
+  PolarisSDK,
+} from "@fr0ntier-x/polaris-sdk";
 import axios from "axios";
 import express from "express";
 
 import { getLogger } from "../../src/logging";
-import { AxiosProxyHandler, axiosProxyResponseInterceptor } from "../../src/proxy/handlers/axiosProxyHandler";
+import { PolarisProxyHandler } from "../../src/proxy/handlers/PolarisProxyHandler";
 
 import type { Config } from "../../src/config/types";
-import type { AxiosResponse } from "axios";
 import type { NextFunction } from "express";
 import type http from "http";
 
@@ -16,7 +20,7 @@ const axiosInstance = axios.create();
 
 describe("PolarisProxyHandler End-to-End Encryption", () => {
   let mockConfig: Config;
-  let handler: AxiosProxyHandler;
+  let handler: PolarisProxyHandler;
   let contextRoot = "";
 
   let polarisApp = express();
@@ -37,6 +41,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     polarisUrlHeaderKey: "polaris-url",
     polarisHeaderKey: "polaris-secure",
     polarisResponsePublicKeyHeader: "polaris-response-public-key",
+    polarisResponseWrappedKeyHeader: "polaris-response-wrapped-key",
     enableInputEncryption: true,
     enableLogging: false,
     enableCORS: false,
@@ -44,7 +49,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     logLevel: "debug",
   };
 
-  handler = new AxiosProxyHandler(polarisSDK, mockConfig);
+  handler = new PolarisProxyHandler(polarisSDK, mockConfig);
   jest.setTimeout(15000); // Set timeout to 10 seconds (10000 ms)
 
   async function bootServers() {
@@ -98,7 +103,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
       })
     );
 
-    axiosInstance.interceptors.response.use(axiosProxyResponseInterceptor(polarisSDK));
+    axiosInstance.interceptors.response.use(createAxiosResponseInterceptor({ polarisSDK }));
 
     const endpoint = `${polarisBase}${testRequest.path}`;
 
