@@ -1,3 +1,4 @@
+import type { AESKey } from "@fr0ntier-x/polaris-sdk/dist/crypto/types";
 import type { Request } from "express";
 
 export interface PolarisRequest extends Request {
@@ -6,5 +7,6 @@ export interface PolarisRequest extends Request {
     headers: Record<string, string>;
     body?: any;
     responsePublicKey?: string;
+    aesKey?: AESKey;
   };
 }

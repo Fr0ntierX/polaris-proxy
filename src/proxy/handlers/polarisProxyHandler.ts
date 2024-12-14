@@ -10,6 +10,8 @@ import type { PolarisRequest } from "../types";
 import type { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import type { NextFunction, Response } from "express";
 import type { Logger } from "pino";
+import { stringify } from "querystring";
+import { AESKey } from "@fr0ntier-x/polaris-sdk/dist/crypto/types";
 
 export const decryptStreamData = (sdk: PolarisSDK, stream: Readable): Readable => {
   const decryptTransform = new DecryptStream(sdk);
@@ -28,8 +30,13 @@ export class PolarisProxyHandler {
     this.logger = getLogger();
   }
 
-  private async decryptData(data: Buffer): Promise<Buffer> {
-    return await this.polarisSDK.decrypt(data);
+  private async decryptData(data: Buffer, aesKey?: AESKey): Promise<Buffer> {
+    if (aesKey) {
+      let decrypted = await this.polarisSDK.decryptWithPresetKey(data, aesKey);
+      return Buffer.from(decrypted);
+    } else {
+      return await this.polarisSDK.decrypt(data);
+    }
   }
 
   async polarisUnwrap(req: PolarisRequest, res: Response, next: NextFunction): Promise<void> {
@@ -42,11 +49,26 @@ export class PolarisProxyHandler {
         ? Buffer.from(req.headers[this.config.polarisResponsePublicKeyHeader] as string, "base64").toString()
         : undefined;
 
+      let aesKey: AESKey | undefined = undefined;
+      const wrappedKeyIv = req.headers[this.config.polarisResponseWrappedKeyHeader] as string;
+      if (wrappedKeyIv) {
+        const wrappedKeyIvArray = wrappedKeyIv.split(":");
+        const key = await this.polarisSDK.unwrapKey(Buffer.from(wrappedKeyIvArray[0], "base64"));
+        const iv = await this.polarisSDK.unwrapKey(Buffer.from(wrappedKeyIvArray[1], "base64"));
+        aesKey = {
+          key,
+          iv,
+        };
+      }
+
       // Process the request parameters
       if (this.config.enableInputEncryption) {
         // Process the URL
         const decryptedUrl = req.headers[this.config.polarisUrlHeaderKey]
-          ? await this.decryptData(Buffer.from(req.headers[this.config.polarisUrlHeaderKey] as string, "base64"))
+          ? await this.decryptData(
+              Buffer.from(req.headers[this.config.polarisUrlHeaderKey] as string, "base64"),
+              aesKey
+            )
           : undefined;
 
         const workloadUrl = decryptedUrl ? decryptedUrl.toString() : req.baseUrl;
@@ -54,7 +76,7 @@ export class PolarisProxyHandler {
 
         // Process the headers
         const decryptedHeaders = req.headers[this.config.polarisHeaderKey]
-          ? await this.decryptData(Buffer.from(req.headers[this.config.polarisHeaderKey] as string, "base64"))
+          ? await this.decryptData(Buffer.from(req.headers[this.config.polarisHeaderKey] as string, "base64"), aesKey)
           : undefined;
 
         const workloadHeaders = decryptedHeaders ? JSON.parse(decryptedHeaders.toString()) : undefined;
@@ -66,6 +88,7 @@ export class PolarisProxyHandler {
           url: workloadUrl,
           headers: workloadHeaders,
           responsePublicKey,
+          aesKey,
         };
       } else {
         this.logger.debug("Pass through all request parameters");
@@ -89,7 +112,6 @@ export class PolarisProxyHandler {
   logBuffer(buffer: Buffer, label: string) {
     try {
       console.log(`${label}:`, buffer.toString("hex").substring(0, 100), "...");
-      console.log(buffer.toString().substring(0, 100), "...");
     } catch (error) {
       console.log(error);
     } finally {
@@ -121,9 +143,9 @@ export class PolarisProxyHandler {
             this.logBuffer(chunk, "Request Chunk Before Decryption");
             if (this.config.enableInputEncryption) {
               if (chunk instanceof Buffer) {
-                chunk = await this.polarisSDK.decrypt(chunk);
+                chunk = await this.decryptData(chunk, req.workloadRequest?.aesKey);
               } else {
-                chunk = await this.polarisSDK.decrypt(Buffer.from(chunk));
+                chunk = await this.decryptData(Buffer.from(chunk), req.workloadRequest?.aesKey);
               }
               this.logBuffer(chunk, "Request Chunk After Decryption");
             } else {
@@ -139,7 +161,7 @@ export class PolarisProxyHandler {
         }
       );
 
-      const aesKey = await this.polarisSDK.createRandomAESKey();
+      let aesKey = await this.polarisSDK.createRandomAESKey();
       const pubKey = req.headers[this.config.polarisResponsePublicKeyHeader]! as string;
       const publicKey = Buffer.from(pubKey, "base64").toString();
 
@@ -157,7 +179,7 @@ export class PolarisProxyHandler {
           this.logBuffer(chunk, "Response Chunk Before Encryption");
           if (this.config.enableOutputEncryption) {
             if (chunk instanceof Buffer) {
-              //chunk = await this.polarisSDK.encrypt(chunk, publicKey);
+              // chunk = await this.polarisSDK.encrypt(chunk, publicKey);
             } else {
               chunk = Buffer.from(chunk);
               // chunk = await this.polarisSDK.encrypt(Buffer.from(chunk), publicKey);

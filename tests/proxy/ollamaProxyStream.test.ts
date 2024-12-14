@@ -9,7 +9,6 @@ import {
 import axios from "axios";
 import express from "express";
 
-import { getLogger } from "../../src/logging";
 import { PolarisProxyHandler } from "../../src/proxy/handlers/PolarisProxyHandler";
 
 import type { Config } from "../../src/config/types";
@@ -34,6 +33,16 @@ class DecryptStream extends Transform {
     } catch (error) {
       callback(error); // Propagate error
     }
+  }
+}
+
+function logBuffer(buffer: Buffer, label: string) {
+  try {
+    console.log(`${label}:`, buffer.toString("hex").substring(0, 100), "...");
+  } catch (error) {
+    console.log(error);
+  } finally {
+    console.log("logBuffer done");
   }
 }
 
@@ -167,14 +176,13 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
             response.data.on("data", (chunk: Buffer) => {
               try {
                 chunks.push(chunk);
-                getLogger().info("pushing...", i++);
-                getLogger().info("got chunk", chunk.toString());
+                logBuffer(chunk, "got chunk");
               } catch (error) {
-                getLogger().info(chunk.toString());
+                logBuffer(chunk, "got chunk");
               }
             });
             response.data.on("end", async () => {
-              getLogger().info("Response stream has ended.");
+              logBuffer(Buffer.concat(chunks), "Response stream has ended.");
               res(Buffer.concat(chunks));
             });
             response.data.on("error", (err: Error) => {
@@ -189,11 +197,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
 
     const response = await getData();
 
-    getLogger().info("collected chunks:", i);
-
-    getLogger().info("chunks", i);
-    getLogger().info("result:", response.toString());
-
+    logBuffer(response, "collected chunks");
     expect(response.byteLength).toBeGreaterThan(0);
   });
 });
