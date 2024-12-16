@@ -1,17 +1,16 @@
 import { Readable } from "stream";
 
-import { createAxiosResponseInterceptor, DecryptStream, type PolarisSDK } from "@fr0ntier-x/polaris-sdk";
+import { DecryptStream, type PolarisSDK } from "@fr0ntier-x/polaris-sdk";
 import axios from "axios";
 
 import { getLogger } from "../../logging";
 
 import type { Config } from "../../config/types";
 import type { PolarisRequest } from "../types";
+import type { AESKey } from "@fr0ntier-x/polaris-sdk/dist/crypto/types";
 import type { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import type { NextFunction, Response } from "express";
 import type { Logger } from "pino";
-import { stringify } from "querystring";
-import { AESKey } from "@fr0ntier-x/polaris-sdk/dist/crypto/types";
 
 export const decryptStreamData = (sdk: PolarisSDK, stream: Readable): Readable => {
   const decryptTransform = new DecryptStream(sdk);
