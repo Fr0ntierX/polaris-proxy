@@ -36,16 +36,6 @@ class DecryptStream extends Transform {
   }
 }
 
-function logBuffer(buffer: Buffer, label: string) {
-  try {
-    console.log(`${label}:`, buffer.toString("hex").substring(0, 100), "...");
-  } catch (error) {
-    console.log(error);
-  } finally {
-    console.log("logBuffer done");
-  }
-}
-
 describe("PolarisProxyHandler End-to-End Encryption", () => {
   let mockConfig: Config;
   let handler: PolarisProxyHandler;
@@ -176,13 +166,9 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
             response.data.on("data", (chunk: Buffer) => {
               try {
                 chunks.push(chunk);
-                logBuffer(chunk, "got chunk");
-              } catch (error) {
-                logBuffer(chunk, "got chunk");
-              }
+              } catch (error) {}
             });
             response.data.on("end", async () => {
-              logBuffer(Buffer.concat(chunks), "Response stream has ended.");
               res(Buffer.concat(chunks));
             });
             response.data.on("error", (err: Error) => {
@@ -197,7 +183,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
 
     const response = await getData();
 
-    logBuffer(response, "collected chunks");
+    console.log("collected chunks", response.toString());
     expect(response.byteLength).toBeGreaterThan(0);
   });
 });

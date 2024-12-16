@@ -108,16 +108,6 @@ export class PolarisProxyHandler {
     }
   }
 
-  logBuffer(buffer: Buffer, label: string) {
-    try {
-      console.log(`${label}:`, buffer.toString("hex").substring(0, 100), "...");
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("logBuffer done");
-    }
-  }
-
   async polarisProxy(req: PolarisRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const url = req.workloadRequest?.url || `${req.baseUrl}${req.url === "/" ? "" : req.url}`;
@@ -139,16 +129,12 @@ export class PolarisProxyHandler {
           const decryptStream = new Readable();
           decryptStream._read = () => {};
           req.on("data", async (chunk: any) => {
-            this.logBuffer(chunk, "Request Chunk Before Decryption");
             if (this.config.enableInputEncryption) {
               if (chunk instanceof Buffer) {
                 chunk = await this.decryptData(chunk, req.workloadRequest?.aesKey);
               } else {
                 chunk = await this.decryptData(Buffer.from(chunk), req.workloadRequest?.aesKey);
               }
-              this.logBuffer(chunk, "Request Chunk After Decryption");
-            } else {
-              this.logBuffer(chunk, "Request Chunk After NoDecryption");
             }
             decryptStream.push(chunk);
           });
@@ -160,34 +146,29 @@ export class PolarisProxyHandler {
         }
       );
 
-      let aesKey = await this.polarisSDK.createRandomAESKey();
-      const pubKey = req.headers[this.config.polarisResponsePublicKeyHeader]! as string;
-      const publicKey = Buffer.from(pubKey, "base64").toString();
+      let aesKey: AESKey | undefined = undefined;
 
-      const wrappedKey = await this.polarisSDK.wrapKey(aesKey.key, publicKey);
-      const wrappedKeyB64 = wrappedKey.toString("base64");
-      const wrappedIv = await this.polarisSDK.wrapKey(aesKey.iv, publicKey);
-      const wrappedIvB64 = wrappedIv.toString("base64");
-      const wrappedKeyIV = `${wrappedKeyB64}:${wrappedIvB64}`;
-      res.setHeader(this.config.polarisResponseWrappedKeyHeader, wrappedKeyIV);
+      if (this.config.enableOutputEncryption) {
+        aesKey = await this.polarisSDK.createRandomAESKey();
+        const pubKey = req.headers[this.config.polarisResponsePublicKeyHeader]! as string;
+        const publicKey = Buffer.from(pubKey, "base64").toString();
+
+        const wrappedKey = await this.polarisSDK.wrapKey(aesKey.key, publicKey);
+        const wrappedKeyB64 = wrappedKey.toString("base64");
+        const wrappedIv = await this.polarisSDK.wrapKey(aesKey.iv, publicKey);
+        const wrappedIvB64 = wrappedIv.toString("base64");
+        const wrappedKeyIV = `${wrappedKeyB64}:${wrappedIvB64}`;
+        res.setHeader(this.config.polarisResponseWrappedKeyHeader, wrappedKeyIV);
+      }
 
       const responseInterceptor = this.axiosInstance.interceptors.response.use((response: AxiosResponse) => {
         const encryptStream = new Readable();
         encryptStream._read = () => {};
         response.data.on("data", async (chunk: any) => {
-          this.logBuffer(chunk, "Response Chunk Before Encryption");
           if (this.config.enableOutputEncryption) {
-            if (chunk instanceof Buffer) {
-              // chunk = await this.polarisSDK.encrypt(chunk, publicKey);
-            } else {
-              chunk = Buffer.from(chunk);
-              // chunk = await this.polarisSDK.encrypt(Buffer.from(chunk), publicKey);
-            }
-            chunk = await this.polarisSDK.encryptWithPresetKey(chunk, aesKey);
-            this.logBuffer(chunk, "Response Chunk After Encryption");
+            chunk = await this.polarisSDK.encryptWithPresetKey(Buffer.from(chunk), aesKey!);
             encryptStream.push(chunk);
           } else {
-            this.logBuffer(chunk, "Response Chunk After NoEncryption");
             encryptStream.push(chunk);
           }
         });

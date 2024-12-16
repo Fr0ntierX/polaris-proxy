@@ -152,7 +152,7 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     getLogger().info("chunks", i);
     getLogger().info("result:", response.toString());
 
-    console.log(response.toString());
+    console.log("all collected:", response.toString());
 
     expect(response.byteLength).toBeGreaterThan(0);
   });

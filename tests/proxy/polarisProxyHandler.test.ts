@@ -160,6 +160,8 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
 
     const clear = await polarisSDK.decrypt(Buffer.from(data));
 
+    console.log("end test", { result: clear.toString(), expected: testRequest.body });
+
     expect(clear.toString()).toEqual(testRequest.body);
   });
 
@@ -194,6 +196,8 @@ describe("PolarisProxyHandler End-to-End Encryption", () => {
     });
 
     getLogger().info({ result: result.data.toString(), original: testRequest.body });
+
+    console.log("test end: ", { result: result.data.toString(), expected: testRequest.body });
 
     expect(result.data.toString()).toEqual(testRequest.body);
   });
