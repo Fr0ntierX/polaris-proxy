@@ -24,6 +24,7 @@ export const getConfig = () => {
   const polarisUrlHeaderKey = process.env.POLARIS_CONTAINER_URL_HEADER_KEY || "polaris-url";
   const polarisHeaderKey = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-secure";
   const polarisResponsePublicKeyHeader = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-response-public-key";
+  const polarisResponseWrappedKeyHeader = process.env.POLARIS_CONTAINER_HEADER_KEY || "polaris-response-wrapped-key";
   const polarisContextRoot = process.env.POLARIS_CONTAINER_CONTEXT_ROOT || "";
   const keyType = process.env.POLARIS_CONTAINER_KEY_TYPE || "ephemeral";
   const logLevel = process.env.POLARIS_CONTAINER_LOG_LEVEL || "info";
@@ -42,6 +43,7 @@ export const getConfig = () => {
     polarisUrlHeaderKey,
     polarisHeaderKey,
     polarisResponsePublicKeyHeader,
+    polarisResponseWrappedKeyHeader,
     polarisContextRoot,
     logLevel,
   };

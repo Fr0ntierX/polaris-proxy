@@ -1,4 +1,4 @@
-import { PolarisProxyHandler } from "./handlers/polarisProxyHandler";
+import { PolarisProxyHandler } from "./handlers/PolarisProxyHandler";
 
 import { getConfig } from "../config";
 import { getLogger } from "../logging";
