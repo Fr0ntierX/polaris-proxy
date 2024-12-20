@@ -5,6 +5,8 @@ import jwkToPem from "jwk-to-pem";
 
 import { getConfigFromEnv } from "./utils";
 
+import { getLogger } from "../../../logging";
+
 import type { KeyHandler } from "@fr0ntier-x/polaris-sdk";
 
 export class AzureSKRSidecarKeyHandler implements KeyHandler {
@@ -14,22 +16,28 @@ export class AzureSKRSidecarKeyHandler implements KeyHandler {
   constructor() {}
 
   private async init() {
-    const { maxSKRRequestRetries, skrRetryInterval, ...skrConfig } = getConfigFromEnv();
+    const { maxSKRRequestRetries, skrRetryInterval, keyReleaseEndpoint, ...skrConfig } = getConfigFromEnv();
 
     let attempt = 0;
     while (attempt < maxSKRRequestRetries) {
       try {
         attempt++;
-        const { data } = await axios.post("http://localhost:8080/key/release", skrConfig);
-        const key = JSON.parse(data.key);
+        const { data } = await axios.post(`${keyReleaseEndpoint}/key/release`, skrConfig);
 
-        this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
-        this.publicKey = jwkToPem(key as jwkToPem.JWK);
-        console.log("Key released successfully");
+        if (data.key) {
+          const key = JSON.parse(data.key);
+          this.privateKey = jwkToPem(key as jwkToPem.JWK, { private: true });
+          this.publicKey = jwkToPem(key as jwkToPem.JWK);
+        } else {
+          this.privateKey = data.privateKey;
+          this.publicKey = data.publicKey;
+        }
+
+        getLogger().info("Key released successfully");
         return;
       } catch (error: any) {
         if (attempt < maxSKRRequestRetries) {
-          console.warn(`Attempt ${attempt} failed. Retrying in ${skrRetryInterval / 1000} seconds...`);
+          getLogger().warn(`Attempt ${attempt} failed. Retrying in ${skrRetryInterval / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, skrRetryInterval));
         } else {
           throw new Error(`Failed to obtain key after ${maxSKRRequestRetries} attempts: ${error.message}`);
